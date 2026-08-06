@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { recordDownload, incrementSongDownloadCount } from '@/lib/api';
 import { formatDuration } from '@/lib/utils';
 import ShareSheet from '@/components/common/ShareSheet';
+import { buildShareUrl } from '@/lib/share';
 
 export default function MusicPlayer() {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ export default function MusicPlayer() {
 
   if (!song) return null;
 
-  const shareUrl = `${window.location.origin}/music?id=${song.id}`;
+  const shareUrl = buildShareUrl('song', song.id);
   const shareText = `Listen to ${song.title} by ${song.artist_name} on ZedVevo`;
 
   const handleSeek = (val: number[]) => seek(val[0]);

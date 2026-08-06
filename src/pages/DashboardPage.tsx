@@ -24,6 +24,7 @@ import {
   deleteSong, deleteVideo, markNotificationRead, updateProfile, uploadFile
 } from '@/lib/api';
 import { supabase } from '@/db/supabase';
+import MyManualPayments from '@/components/payments/MyManualPayments';
 import { formatDate, formatCurrency, getPaymentStatusColor, getPaymentStatusLabel } from '@/lib/utils';
 import { Navigate } from 'react-router-dom';
 
@@ -342,6 +343,9 @@ export default function DashboardPage() {
                 </div>
               )
             }
+
+            <h2 className="text-sm font-semibold mb-3 mt-6">Manual Payments (WhatsApp approval)</h2>
+            <MyManualPayments />
           </TabsContent>
 
           {/* Awards */}

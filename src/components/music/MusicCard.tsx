@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toggleLike, toggleSave, recordDownload, incrementSongDownloadCount } from '@/lib/api';
 import { formatDuration } from '@/lib/utils';
 import ShareSheet from '@/components/common/ShareSheet';
+import { buildShareUrl } from '@/lib/share';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
@@ -25,7 +26,7 @@ export default function MusicCard({ song, isPlaying, onPlay, compact = false }: 
   const [shareOpen, setShareOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const shareUrl = `${window.location.origin}/music?id=${song.id}`;
+  const shareUrl = buildShareUrl('song', song.id);
   const shareText = `Listen to "${song.title}" by ${song.artist_name} on ZedVevo — ${window.location.origin}/music?id=${song.id}`;
 
   const handleLike = async (e: React.MouseEvent) => {

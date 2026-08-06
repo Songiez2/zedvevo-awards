@@ -1,6 +1,6 @@
 import BackToHome from '@/components/common/BackToHome';
 import { useState, useEffect, useMemo } from 'react';
-import { Trophy, Loader2, AlertCircle } from 'lucide-react';
+import { Trophy, Loader2, AlertCircle, Share2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +16,11 @@ import { getActiveAwards, getNomineesByCategory, getSettings } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { generateIdempotencyKey, formatCurrency } from '@/lib/utils';
+import ShareSheet from '@/components/common/ShareSheet';
+import { buildShareUrl } from '@/lib/share';
+import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { usePaymentConfig } from '@/hooks/usePaymentConfig';
+import type { ManualPaymentMetadata, ManualServiceType } from '@/types/manualPayment';
 
 export default function AwardsPage() {
   const { user } = useAuth();
@@ -31,7 +36,7 @@ export default function AwardsPage() {
   const [nomCategoryId, setNomCategoryId] = useState('');
   const [nomName, setNomName] = useState('');
   const [nomPhone, setNomPhone] = useState('');
-  const [nomPayMethod, setNomPayMethod] = useState<'mobile_money' | 'card'>('mobile_money');
+  const [nomPayMethod, setNomPayMethod] = useState<'mobile_money' | 'card' | 'manual'>('mobile_money');
   const [nomLoading, setNomLoading] = useState(false);
 
   // Vote dialog
@@ -39,8 +44,18 @@ export default function AwardsPage() {
   const [voteNominee, setVoteNominee] = useState<Nominee | null>(null);
   const [voteAmount, setVoteAmount] = useState('');
   const [votePhone, setVotePhone] = useState('');
-  const [votePayMethod, setVotePayMethod] = useState<'mobile_money' | 'card'>('mobile_money');
+  const [votePayMethod, setVotePayMethod] = useState<'mobile_money' | 'card' | 'manual'>('mobile_money');
   const [voteLoading, setVoteLoading] = useState(false);
+
+  // Share sheet
+  const [shareNominee, setShareNominee] = useState<Nominee | null>(null);
+
+  // Manual payment (WhatsApp approval) flow
+  const { allowsAutomatic, allowsManual } = usePaymentConfig();
+  const [manualDialog, setManualDialog] = useState<{
+    open: boolean; service: ManualServiceType; amount: number;
+    metadata: ManualPaymentMetadata; name: string; phone: string;
+  } | null>(null);
 
   useEffect(() => {
     Promise.all([getActiveAwards(), getSettings()])
@@ -91,6 +106,18 @@ export default function AwardsPage() {
     if (!nomCategoryId) { toast.error('Please select a category'); return; }
     if (!nomName)       { toast.error('Please enter your name'); return; }
     if (nomPayMethod === 'mobile_money' && !nomPhone) { toast.error('Enter your phone number'); return; }
+    if (nomPayMethod === 'manual') {
+      setNomDialog(false);
+      setManualDialog({
+        open: true,
+        service: 'nominee_registration',
+        amount: nomineeFee,
+        metadata: { award_id: nomAwardId, category_id: nomCategoryId, nominee_name: nomName },
+        name: nomName,
+        phone: nomPhone,
+      });
+      return;
+    }
     setNomLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -126,6 +153,23 @@ export default function AwardsPage() {
     const amount = parseFloat(voteAmount);
     if (isNaN(amount) || amount < voteMin) { toast.error(`Minimum vote amount is ${formatCurrency(voteMin)}`); return; }
     if (votePayMethod === 'mobile_money' && !votePhone) { toast.error('Enter your phone number'); return; }
+    if (votePayMethod === 'manual') {
+      setVoteDialog(false);
+      setManualDialog({
+        open: true,
+        service: 'vote',
+        amount,
+        metadata: {
+          nominee_id: voteNominee.id,
+          category_id: voteNominee.category_id,
+          nominee_name: voteNominee.name,
+          vote_count: Math.floor(amount / voteMin),
+        },
+        name: voteNominee.name,
+        phone: votePhone,
+      });
+      return;
+    }
     setVoteLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -245,37 +289,52 @@ export default function AwardsPage() {
                             No nominees yet in this category.
                           </div>
                         ) : (
-                          <div className="divide-y divide-border">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-3">
                             {catNominees.map(nominee => (
-                              <div key={nominee.id} className="flex items-center gap-3 p-3 hover:bg-muted/30 transition-colors">
-                                <div className="h-10 w-10 rounded-full overflow-hidden bg-muted shrink-0">
+                              <div
+                                key={nominee.id}
+                                className="group relative rounded-xl border border-border/60 bg-card/60 backdrop-blur-md overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-accent/50"
+                              >
+                                <div className="aspect-square bg-muted overflow-hidden">
                                   {nominee.photo_url
-                                    ? <img src={nominee.photo_url} alt={nominee.name} className="w-full h-full object-cover" />
-                                    : <div className="w-full h-full flex items-center justify-center text-sm font-bold text-muted-foreground">{nominee.name[0]}</div>
+                                    ? <img src={nominee.photo_url} alt={nominee.name} loading="lazy"
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                    : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-muted-foreground">
+                                        {nominee.name[0]}
+                                      </div>
                                   }
+                                  <button
+                                    onClick={() => setShareNominee(nominee)}
+                                    aria-label={`Share ${nominee.name}`}
+                                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/70 backdrop-blur-md border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                  >
+                                    <Share2 className="h-3.5 w-3.5" />
+                                  </button>
+                                  {nominee.is_winner && (
+                                    <Badge className="absolute top-2 left-2 text-[10px] bg-accent text-accent-foreground">Winner</Badge>
+                                  )}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium truncate">{nominee.name}</p>
-                                    {nominee.is_winner && (
-                                      <Badge className="text-[10px] bg-accent text-accent-foreground">Winner</Badge>
+                                <div className="p-3 space-y-2">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-semibold truncate">{nominee.name}</p>
+                                    {nominee.song_title && (
+                                      <p className="text-xs text-muted-foreground truncate">{nominee.song_title}</p>
                                     )}
                                   </div>
-                                  {nominee.song_title && <p className="text-xs text-muted-foreground truncate">{nominee.song_title}</p>}
-                                </div>
-                                <div className="flex items-center gap-3 shrink-0">
-                                  <div className="text-right hidden sm:block">
-                                    <p className="text-sm font-semibold">{nominee.total_votes.toLocaleString()}</p>
-                                    <p className="text-[10px] text-muted-foreground">votes</p>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="flex items-center gap-1 text-xs font-medium text-accent">
+                                      <Heart className="h-3.5 w-3.5" />
+                                      {nominee.total_votes.toLocaleString()}
+                                      <span className="text-muted-foreground font-normal">votes</span>
+                                    </span>
+                                    {selectedAward.voting_open && user && (
+                                      <Button size="sm" className="h-7 text-xs bg-accent hover:bg-accent/90 text-accent-foreground"
+                                        onClick={() => { setVoteNominee(nominee); setVoteDialog(true); }}
+                                      >
+                                        Vote
+                                      </Button>
+                                    )}
                                   </div>
-                                  {selectedAward.voting_open && user && (
-                                    <Button size="sm" variant="outline"
-                                      className="text-xs h-7"
-                                      onClick={() => { setVoteNominee(nominee); setVoteDialog(true); }}
-                                    >
-                                      Vote
-                                    </Button>
-                                  )}
                                 </div>
                               </div>
                             ))}
@@ -346,11 +405,12 @@ export default function AwardsPage() {
             </div>
             <div>
               <Label>Payment Method *</Label>
-              <Select value={nomPayMethod} onValueChange={v => setNomPayMethod(v as 'mobile_money' | 'card')}>
+              <Select value={nomPayMethod} onValueChange={v => setNomPayMethod(v as 'mobile_money' | 'card' | 'manual')}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
+                  {allowsAutomatic && <SelectItem value="mobile_money">Mobile Money</SelectItem>}
+                  {allowsAutomatic && <SelectItem value="card">Card</SelectItem>}
+                  {allowsManual && <SelectItem value="manual">Manual payment (WhatsApp approval)</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -404,11 +464,12 @@ export default function AwardsPage() {
             </div>
             <div>
               <Label>Payment Method *</Label>
-              <Select value={votePayMethod} onValueChange={v => setVotePayMethod(v as 'mobile_money' | 'card')}>
+              <Select value={votePayMethod} onValueChange={v => setVotePayMethod(v as 'mobile_money' | 'card' | 'manual')}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
+                  {allowsAutomatic && <SelectItem value="mobile_money">Mobile Money</SelectItem>}
+                  {allowsAutomatic && <SelectItem value="card">Card</SelectItem>}
+                  {allowsManual && <SelectItem value="manual">Manual payment (WhatsApp approval)</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -432,6 +493,29 @@ export default function AwardsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Share a nominee — uses the OG share endpoint so the photo shows up */}
+      <ShareSheet
+        open={!!shareNominee}
+        onClose={() => setShareNominee(null)}
+        url={shareNominee ? buildShareUrl('nominee', shareNominee.id) : ''}
+        title={shareNominee?.name || ''}
+        text={shareNominee ? `Vote for ${shareNominee.name} in the ZedVevo Awards` : undefined}
+        thumbnailUrl={shareNominee?.photo_url}
+      />
+
+      {/* Manual payment — WhatsApp approval flow */}
+      {manualDialog && (
+        <ManualPaymentDialog
+          open={manualDialog.open}
+          onClose={() => setManualDialog(null)}
+          serviceType={manualDialog.service}
+          amount={manualDialog.amount}
+          metadata={manualDialog.metadata}
+          defaultName={manualDialog.name}
+          defaultPhone={manualDialog.phone}
+        />
+      )}
     </div>
   );
 }

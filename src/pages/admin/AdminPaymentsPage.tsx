@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ManualPaymentsPanel from '@/components/admin/ManualPaymentsPanel';
 import { getAllPayments } from '@/lib/api';
 import { formatDate, formatCurrency, getPaymentStatusColor, getPaymentStatusLabel } from '@/lib/utils';
 import type { Payment } from '@/types/index';
@@ -66,6 +68,13 @@ export default function AdminPaymentsPage() {
         </Button>
       </div>
 
+      <Tabs defaultValue="automatic">
+        <TabsList className="h-8 flex-wrap">
+          <TabsTrigger value="automatic" className="text-xs">Automatic</TabsTrigger>
+          <TabsTrigger value="manual" className="text-xs">Manual (WhatsApp)</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="automatic" className="mt-4 space-y-4">
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
@@ -127,6 +136,12 @@ export default function AdminPaymentsPage() {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">Showing {filtered.length} of {payments.length} payments</p>
+        </TabsContent>
+
+        <TabsContent value="manual" className="mt-4">
+          <ManualPaymentsPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

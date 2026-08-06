@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toggleLike, toggleSave, recordDownload, incrementVideoDownloadCount } from '@/lib/api';
 import { formatDuration } from '@/lib/utils';
 import ShareSheet from '@/components/common/ShareSheet';
+import { buildShareUrl } from '@/lib/share';
 
 interface VideoCardProps {
   video: Video;
@@ -21,7 +22,7 @@ export default function VideoCard({ video, onPlay, active = false }: VideoCardPr
   const [downloading, setDownloading] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
-  const shareUrl = `${window.location.origin}/videos?id=${video.id}`;
+  const shareUrl = buildShareUrl('video', video.id);
   const shareText = `Watch "${video.title}" by ${video.artist_name} on ZedVevo — ${window.location.origin}/videos?id=${video.id}`;
 
   const handleLike = async (e: React.MouseEvent) => {

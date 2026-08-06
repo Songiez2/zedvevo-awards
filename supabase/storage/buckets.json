@@ -1,0 +1,76 @@
+{
+  "buckets": [
+    {
+      "name": "music",
+      "public": true,
+      "id": "music",
+      "description": "Store audio files",
+      "file_size_limit": 52428800,
+      "allowed_mime_types": ["audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4", "audio/aac"]
+    },
+    {
+      "name": "videos",
+      "public": true,
+      "id": "videos",
+      "description": "Store video files",
+      "file_size_limit": 209715200,
+      "allowed_mime_types": ["video/mp4", "video/webm", "video/quicktime"]
+    },
+    {
+      "name": "albums",
+      "public": true,
+      "id": "albums",
+      "description": "Store album covers",
+      "file_size_limit": 5242880,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    },
+    {
+      "name": "products",
+      "public": true,
+      "id": "products",
+      "description": "Store product images",
+      "file_size_limit": 10485760,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    },
+    {
+      "name": "profiles",
+      "public": true,
+      "id": "profiles",
+      "description": "Store user profile pictures",
+      "file_size_limit": 2097152,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    },
+    {
+      "name": "artists",
+      "public": true,
+      "id": "artists",
+      "description": "Store artist images and banners",
+      "file_size_limit": 10485760,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    },
+    {
+      "name": "hero",
+      "public": true,
+      "id": "hero",
+      "description": "Store hero slider images",
+      "file_size_limit": 10485760,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    },
+    {
+      "name": "tickets",
+      "public": true,
+      "id": "tickets",
+      "description": "Store ticket QR codes",
+      "file_size_limit": 1048576,
+      "allowed_mime_types": ["image/png", "image/jpeg"]
+    },
+    {
+      "name": "images",
+      "public": true,
+      "id": "images",
+      "description": "General purpose image storage",
+      "file_size_limit": 5242880,
+      "allowed_mime_types": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    }
+  ]
+}

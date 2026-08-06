@@ -20,6 +20,7 @@ import {
   getAllPlans, updatePlan, getAllBanners, createBanner, updateBanner, deleteBanner,
   getSettings, updateSetting, createNotification, uploadFile, getAllDownloads,
 } from '@/lib/api';
+import PaymentSettingsPanel from '@/components/admin/PaymentSettingsPanel';
 import { formatDate } from '@/lib/utils';
 import type { UploadPlan, HeroBanner, Download as DownloadType } from '@/types/index';
 
@@ -124,6 +125,7 @@ export default function AdminSettingsPage() {
           <TabsTrigger value="banners"  className="text-xs">Banners</TabsTrigger>
           <TabsTrigger value="notifications" className="text-xs">Notifications</TabsTrigger>
           <TabsTrigger value="downloads" className="text-xs">Downloads</TabsTrigger>
+          <TabsTrigger value="payments" className="text-xs">Payments</TabsTrigger>
           <TabsTrigger value="app"      className="text-xs">App Config</TabsTrigger>
         </TabsList>
 
@@ -260,6 +262,10 @@ export default function AdminSettingsPage() {
                 onSave={v => saveSetting(key, v)} />
             ))}
           </div>
+        </TabsContent>
+        {/* Payments */}
+        <TabsContent value="payments" className="mt-4">
+          <PaymentSettingsPanel settings={settings} onSave={saveSetting} saving={settingSaving} />
         </TabsContent>
       </Tabs>
 

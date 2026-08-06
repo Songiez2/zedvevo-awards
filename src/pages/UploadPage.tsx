@@ -17,8 +17,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/db/supabase';
 import { generateIdempotencyKey, formatCurrency, formatDate, snakeCaseFileName } from '@/lib/utils';
 import { Navigate, useNavigate } from 'react-router-dom';
+import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { usePaymentConfig } from '@/hooks/usePaymentConfig';
+import type { ManualServiceType } from '@/types/manualPayment';
+import { MessageCircle } from 'lucide-react';
 
-type PayMethod = 'mobile_money' | 'card';
+type PayMethod = 'mobile_money' | 'card' | 'manual';
 
 export default function UploadPage() {
   const { user, profile } = useAuth();
@@ -35,6 +39,10 @@ export default function UploadPage() {
   const [payLoading, setPayLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+
+  // Manual payment (WhatsApp approval)
+  const { allowsAutomatic, allowsManual } = usePaymentConfig();
+  const [manualOpen, setManualOpen] = useState(false);
 
   // Upload form
   const [uploadType, setUploadType] = useState<'song' | 'video'>('song');
@@ -151,7 +159,7 @@ export default function UploadPage() {
 
   const openPayDialog = (plan: UploadPlan) => {
     setSelectedPlan(plan);
-    setPayMethod('mobile_money');
+    setPayMethod(allowsAutomatic ? 'mobile_money' : 'manual');
     setPhone('');
     setPaymentStatus(null);
     setPaymentUrl(null);
@@ -161,6 +169,7 @@ export default function UploadPage() {
   const handlePayment = async () => {
     if (!selectedPlan) return;
     if (payMethod === 'mobile_money' && !phone) { toast.error('Enter your phone number'); return; }
+    if (payMethod === 'manual') { setPayDialog(false); setManualOpen(true); return; }
     setPayLoading(true);
     try {
       // Always get the live session token so the edge function can identify the user
@@ -596,7 +605,7 @@ export default function UploadPage() {
               <div>
                 <Label className="text-sm mb-2 block">Payment Method</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  {allowsAutomatic && <button
                     onClick={() => setPayMethod('mobile_money')}
                     className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
                       payMethod === 'mobile_money' ? 'border-accent bg-accent/5 text-accent' : 'border-border text-foreground'
@@ -604,8 +613,8 @@ export default function UploadPage() {
                   >
                     <Phone className="h-4 w-4 shrink-0" />
                     <span>Mobile Money</span>
-                  </button>
-                  <button
+                  </button>}
+                  {allowsAutomatic && <button
                     onClick={() => setPayMethod('card')}
                     className={`relative flex items-center justify-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
                       payMethod === 'card' ? 'border-accent bg-accent/5 text-accent' : 'border-border text-foreground'
@@ -616,7 +625,18 @@ export default function UploadPage() {
                     <Badge className="absolute -top-2 -right-2 text-[9px] px-1.5 py-0 bg-muted text-muted-foreground border border-border">
                       Soon
                     </Badge>
-                  </button>
+                  </button>}
+                  {allowsManual && (
+                    <button
+                      onClick={() => setPayMethod('manual')}
+                      className={`col-span-2 flex items-center justify-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
+                        payMethod === 'manual' ? 'border-accent bg-accent/5 text-accent' : 'border-border text-foreground'
+                      }`}
+                    >
+                      <MessageCircle className="h-4 w-4 shrink-0" />
+                      <span>Manual payment (WhatsApp approval)</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -634,6 +654,14 @@ export default function UploadPage() {
               )}
 
               {/* Mobile money phone input */}
+              {payMethod === 'manual' && (
+                <div className="flex items-start gap-2 rounded-lg border border-accent/40 bg-accent/5 p-3 text-xs text-muted-foreground">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0 text-accent mt-0.5" />
+                  You will enter your payment details and proof next, then submit them to the official
+                  WhatsApp approval group. Your plan activates once an admin verifies the payment.
+                </div>
+              )}
+
               {payMethod === 'mobile_money' && (
                 <div>
                   <Label>Phone Number *</Label>
@@ -665,7 +693,9 @@ export default function UploadPage() {
                 >
                   {payLoading
                     ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Processing…</>
-                    : `Pay ${selectedPlan ? formatCurrency(selectedPlan.price) : ''}`
+                    : payMethod === 'manual'
+                      ? 'Continue'
+                      : `Pay ${selectedPlan ? formatCurrency(selectedPlan.price) : ''}`
                   }
                 </Button>
               </div>
@@ -673,6 +703,19 @@ export default function UploadPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Manual payment — WhatsApp approval flow */}
+      {selectedPlan && (
+        <ManualPaymentDialog
+          open={manualOpen}
+          onClose={() => setManualOpen(false)}
+          serviceType={(uploadType === 'video' ? 'video_upload' : 'music_upload') as ManualServiceType}
+          amount={selectedPlan.price}
+          metadata={{ plan_id: selectedPlan.id, plan_type: selectedPlan.plan_type }}
+          defaultName={profile?.display_name || ''}
+          defaultPhone={phone}
+        />
+      )}
     </div>
   );
 }
