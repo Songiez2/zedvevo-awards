@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Music, Video, ShoppingBag, Mic, Calendar, Info, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
+import { Mail, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react'
 
 const footerLinks = {
   music: [

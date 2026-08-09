@@ -12,6 +12,8 @@ import SearchPage from './pages/SearchPage';
 import TrendingPage from './pages/TrendingPage';
 import MyDownloadsPage from './pages/MyDownloadsPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import BecomeArtistPage from './pages/BecomeArtistPage';
+import ArtistProfilePage from './pages/ArtistProfilePage';
 
 export interface RouteConfig {
   name: string;
@@ -31,6 +33,8 @@ export const routes: RouteConfig[] = [
   { name: 'Trending',       path: '/trending',        component: TrendingPage,       public: true },
   { name: 'Search',         path: '/search',          component: SearchPage,         public: true },
   { name: 'PaymentSuccess', path: '/payment-success', component: PaymentSuccessPage, public: true },
+  { name: 'BecomeArtist',  path: '/become-artist',   component: BecomeArtistPage,  public: false },
+  { name: 'ArtistProfile', path: '/artists/:id',      component: ArtistProfilePage, public: true },
   { name: 'Upload',         path: '/upload',          component: UploadPage,         public: false },
   { name: 'Library',        path: '/library',         component: LibraryPage,        public: false },
   { name: 'Downloads',      path: '/downloads',       component: MyDownloadsPage,    public: false },

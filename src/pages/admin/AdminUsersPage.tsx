@@ -95,9 +95,40 @@ export default function AdminUsersPage() {
     finally { setRoleLoading(false); }
   };
 
+  const promoteToArtist = async (target: Profile) => {
+    if (target.role !== 'user') return;
+    if (!window.confirm(`Promote ${target.username || target.email || 'this user'} to Artist?`)) return;
+    try {
+      await updateProfile(target.id, { role: 'artist' });
+      const { data: artist, error: artistLookupError } = await supabase
+        .from('artists').select('id').eq('user_id', target.id).maybeSingle();
+      if (artistLookupError) throw artistLookupError;
+      if (!artist) {
+        const { error } = await supabase.from('artists').insert({
+          user_id: target.id,
+          name: target.display_name || target.username || 'ZedVevo Artist',
+        });
+        if (error) throw error;
+      }
+      await supabase.from('notifications').insert({
+        user_id: target.id,
+        title: 'Artist Account Activated',
+        message: 'An administrator has promoted your account to Artist. You can now access artist uploads.',
+        type: 'success',
+        notification_type: 'artist_promoted',
+      });
+      setUsers(prev => prev.map(u => u.id === target.id ? { ...u, role: 'artist' } : u));
+      toast.success('User promoted to Artist');
+    } catch (error) {
+      console.error('Artist promotion failed:', error);
+      toast.error('Could not promote this user to Artist');
+    }
+  };
+
   const roleBadge = (role: string) => {
     if (role === 'super_admin') return <Badge className="text-[10px] bg-accent text-accent-foreground">Super Admin</Badge>;
     if (role === 'admin')       return <Badge className="text-[10px]">Admin</Badge>;
+    if (role === 'artist')      return <Badge className="text-[10px] bg-violet-600">Artist</Badge>;
     return <Badge variant="secondary" className="text-[10px]">User</Badge>;
   };
 
@@ -122,6 +153,7 @@ export default function AdminUsersPage() {
           <SelectContent>
             <SelectItem value="all">All roles</SelectItem>
             <SelectItem value="user">User</SelectItem>
+            <SelectItem value="artist">Artist</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="super_admin">Super Admin</SelectItem>
           </SelectContent>
@@ -155,6 +187,11 @@ export default function AdminUsersPage() {
                 <td className="py-2.5 px-3 whitespace-nowrap text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
                 <td className="py-2.5 px-3 whitespace-nowrap">
                   <div className="flex gap-1.5">
+                    {(myProfile?.role === 'admin' || isSuperAdmin) && u.role === 'user' && u.id !== user?.id && (
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => promoteToArtist(u)}>
+                        <UserCog className="h-3 w-3" /> Promote to Artist
+                      </Button>
+                    )}
                     {/* Role management — super_admin only, can't change own role */}
                     {isSuperAdmin && u.id !== user?.id && (
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => openRoleDialog(u)}>
@@ -247,6 +284,7 @@ export default function AdminUsersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">User</SelectItem>
+                <SelectItem value="artist">Artist</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="super_admin">Super Admin</SelectItem>
               </SelectContent>

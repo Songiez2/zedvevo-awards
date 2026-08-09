@@ -161,24 +161,4 @@ export const storageService = {
     })
   },
 
-  async uploadMerchandiseImage(file: File, merchandiseId: string, index: number): Promise<UploadResult | UploadError> {
-    const ext = file.name.split('.').pop()
-    const fileName = `${index}.${ext}`
-    return this.uploadFile(file, {
-      bucket: 'products',
-      path: merchandiseId,
-      fileName,
-      contentType: file.type,
-    })
-  },
-
-  async uploadTicketQRCode(ticketId: string, qrDataUrl: string): Promise<UploadResult | UploadError> {
-    const response = await fetch(qrDataUrl)
-    const blob = await response.blob()
-    return this.uploadFile(blob, {
-      bucket: 'tickets',
-      fileName: `${ticketId}.png`,
-      contentType: 'image/png',
-    })
-  },
 }

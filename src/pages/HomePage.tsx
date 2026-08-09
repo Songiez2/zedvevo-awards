@@ -116,16 +116,17 @@ export default function HomePage() {
       {/* Featured Artists — ordered by newest */}
       <SectionRow title="New Artists" viewAllLink="/music" loading={loading} grid skeletonCount={6} skeletonClassName="aspect-square">
         {artists.map(artist => (
-          <div key={artist.id} className="text-center group">
-            <div className="h-20 w-20 md:h-28 md:w-28 rounded-full overflow-hidden mx-auto mb-2 bg-muted border-2 border-border group-hover:border-accent transition-colors">
+          <Link key={artist.id} to={`/artists/${artist.id}`} className="group block rounded-xl border border-border bg-card p-3 text-center transition-all hover:-translate-y-1 hover:border-accent hover:shadow-card">
+            <div className="h-24 w-24 md:h-28 md:w-28 rounded-full overflow-hidden mx-auto mb-3 bg-muted border-2 border-border group-hover:border-accent transition-colors">
               {artist.avatar_url
                 ? <img src={artist.avatar_url} alt={artist.name} className="w-full h-full object-cover" />
                 : <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-muted-foreground/40">{artist.name[0]}</div>
               }
             </div>
-            <p className="text-xs font-semibold truncate">{artist.name}</p>
-            <p className="text-[10px] text-muted-foreground">{artist.play_count.toLocaleString()} plays</p>
-          </div>
+            <p className="text-sm font-semibold truncate group-hover:text-accent">{artist.name}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{artist.play_count.toLocaleString()} plays</p>
+            <p className="text-[11px] text-muted-foreground">{(artist.download_count || 0).toLocaleString()} downloads</p>
+          </Link>
         ))}
       </SectionRow>
 

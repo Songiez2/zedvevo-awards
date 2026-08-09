@@ -1,24 +1,28 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-      realtime: {
-        params: {
-          eventsPerSecond: 10,
-        },
-      },
-    })
-  : null
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const isConfigured = !!(supabaseUrl && supabaseAnonKey)
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.'
+  )
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+})
 
 export type Tables = {
   profiles: Profile
@@ -34,12 +38,6 @@ export type Tables = {
   downloads: Download
   purchases: Purchase
   payments: Payment
-  events: Event
-  tickets: Ticket
-  merchandise: Merchandise
-  orders: Order
-  order_items: OrderItem
-  cart_items: CartItem
   comments: Comment
   notifications: Notification
   categories: Category
@@ -262,123 +260,6 @@ export interface Payment {
   completed_at: string | null
   created_at: string
   updated_at: string
-}
-
-export interface Event {
-  id: string
-  artist_id: string
-  title: string
-  slug: string
-  description: string | null
-  banner_url: string | null
-  venue: string
-  address: string | null
-  city: string | null
-  country: string
-  event_date: string
-  doors_open: string | null
-  ticket_price: number
-  currency: string
-  total_tickets: number
-  tickets_sold: number
-  is_active: boolean
-  is_featured: boolean
-  created_at: string
-  updated_at: string
-  artist?: Artist
-}
-
-export interface Ticket {
-  id: string
-  event_id: string
-  user_id: string | null
-  ticket_type: string
-  ticket_number: string
-  qr_code: string | null
-  status: 'available' | 'sold' | 'used' | 'cancelled'
-  price: number
-  currency: string
-  payment_id: string | null
-  purchased_at: string | null
-  used_at: string | null
-  created_at: string
-  event?: Event
-  user?: Profile
-}
-
-export interface Merchandise {
-  id: string
-  seller_id: string
-  artist_id: string | null
-  title: string
-  slug: string
-  description: string | null
-  category: string
-  price: number
-  currency: string
-  stock: number
-  sold_count: number
-  images: string[]
-  sizes: string[]
-  colors: string[]
-  is_active: boolean
-  is_featured: boolean
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
-  seller?: Profile
-  artist?: Artist
-}
-
-export interface Order {
-  id: string
-  user_id: string
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
-  subtotal: number
-  shipping_fee: number
-  total: number
-  currency: string
-  shipping_address: ShippingAddress | null
-  payment_id: string | null
-  notes: string | null
-  created_at: string
-  updated_at: string
-  user?: Profile
-  items?: OrderItem[]
-}
-
-export interface OrderItem {
-  id: string
-  order_id: string
-  merchandise_id: string
-  quantity: number
-  unit_price: number
-  total_price: number
-  size: string | null
-  color: string | null
-  created_at: string
-  merchandise?: Merchandise
-}
-
-export interface ShippingAddress {
-  name: string
-  phone: string
-  address: string
-  city: string
-  province: string
-  country: string
-  postal_code?: string
-}
-
-export interface CartItem {
-  id: string
-  user_id: string
-  merchandise_id: string
-  quantity: number
-  size: string | null
-  color: string | null
-  created_at: string
-  merchandise?: Merchandise
 }
 
 export interface Comment {

@@ -1,5 +1,5 @@
 // Mock data with real music samples
-import type { Song, Album, Artist, Video, Merchandise, Event, Category } from './supabase'
+import type { Song, Album, Artist, Video, Category } from './supabase'
 
 export const mockSongs: Song[] = [
   { id: '1', title: 'Summer Vibes', slug: 'summer-vibes', description: 'Upbeat summer track', artist_id: '1', album_id: '1', artist: { id: '1', stage_name: 'Bensound', user_id: '', bio: '', cover_image_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400', website: '', social_links: {}, monthly_listeners: 50000, total_streams: 100000, total_followers: 5000, verified: true, featured: true, created_at: '', updated_at: '' }, audio_url: 'https://www.bensound.com/bensound-music/bensound-summer.mp3', cover_url: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300', duration: 210, genre_id: null, price: 0, currency: 'ZMW', access: 'free', lyrics: '', isrc: '', is_featured: true, is_explicit: false, play_count: 15000, download_count: 0, created_at: '', updated_at: '', deleted_at: null },
@@ -24,15 +24,6 @@ export const mockArtists: Artist[] = [
   { id: '2', user_id: '', stage_name: 'Free Music', bio: 'Electronic music producer', cover_image_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400', website: '', social_links: {}, monthly_listeners: 30000, total_streams: 80000, total_followers: 3000, verified: false, featured: true, created_at: '', updated_at: '' },
   { id: '3', user_id: '', stage_name: 'Happy Rock', bio: 'Fun and upbeat music maker', cover_image_url: 'https://images.unsplash.com/photo-1504898770365-14faca6a7320?w=400', website: '', social_links: {}, monthly_listeners: 40000, total_streams: 90000, total_followers: 4000, verified: true, featured: false, created_at: '', updated_at: '' },
   { id: '4', user_id: '', stage_name: 'Acoustic Dreams', bio: 'Acoustic guitarist and composer', cover_image_url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400', website: '', social_links: {}, monthly_listeners: 25000, total_streams: 60000, total_followers: 2000, verified: false, featured: false, created_at: '', updated_at: '' },
-]
-
-export const mockMerchandise: Merchandise[] = [
-  { id: '1', title: 'ZedVevo T-Shirt', slug: 'zedvevo-tshirt', description: 'Comfortable cotton t-shirt', category: 'Apparel', price: 29.99, currency: 'ZMW', stock: 50, sold_count: 120, images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400'], sizes: ['S', 'M', 'L', 'XL'], colors: ['Black', 'White', 'Blue'], is_active: true, is_featured: true, seller_id: '1', artist_id: null, created_at: '', updated_at: '', deleted_at: null },
-  { id: '2', title: 'Artist Hoodie', slug: 'artist-hoodie', description: 'Warm and cozy hoodie', category: 'Apparel', price: 49.99, currency: 'ZMW', stock: 30, sold_count: 85, images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400'], sizes: ['S', 'M', 'L', 'XL'], colors: ['Black', 'Gray'], is_active: true, is_featured: false, seller_id: '1', artist_id: null, created_at: '', updated_at: '', deleted_at: null },
-]
-
-export const mockEvents: Event[] = [
-  { id: '1', title: 'Summer Music Festival', slug: 'summer-music-festival', description: 'The biggest music event of the year', artist_id: '1', artist: { id: '1', user_id: '', stage_name: 'Bensound', bio: '', cover_image_url: '', website: '', social_links: {}, monthly_listeners: 50000, total_streams: 100000, total_followers: 5000, verified: true, featured: true, created_at: '', updated_at: '' }, venue: 'Central Park', address: '123 Park Ave', city: 'Lusaka', country: 'Zambia', banner_url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800', event_date: '2026-08-15', doors_open: '18:00', ticket_price: 75, currency: 'ZMW', total_tickets: 500, tickets_sold: 320, is_active: true, is_featured: true, created_at: '', updated_at: '' },
 ]
 
 export const mockCategories: Category[] = [

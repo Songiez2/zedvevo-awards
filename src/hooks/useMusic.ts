@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase, isConfigured, type Song, type Album, type Artist, type Playlist } from '@/lib/supabase'
+import { supabase, isConfigured, type Song, type Album, type Artist } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { mockSongs, mockAlbums, mockArtists } from '@/lib/mockData'
 

@@ -221,7 +221,32 @@ export async function getFeaturedArtists(limit = 8): Promise<Artist[]> {
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return Array.isArray(data) ? data : [];
+  const artists = Array.isArray(data) ? data as Artist[] : [];
+  return Promise.all(artists.map(async artist => {
+    const [songs, videos] = await Promise.all([
+      supabase.from('songs').select('download_count').eq('artist_id', artist.id),
+      supabase.from('videos').select('download_count').eq('artist_id', artist.id),
+    ]);
+    const totalDownloads = [...(songs.data || []), ...(videos.data || [])]
+      .reduce((total, content) => total + Number(content.download_count || 0), 0);
+    return { ...artist, download_count: totalDownloads };
+  }));
+}
+
+export async function getArtistProfile(artistId: string): Promise<Artist | null> {
+  const { data, error } = await supabase.from('artists').select('*').eq('id', artistId).maybeSingle();
+  if (error) throw error;
+  return data as Artist | null;
+}
+
+export async function getArtistContent(artistId: string) {
+  const [songs, videos] = await Promise.all([
+    supabase.from('songs').select('*').eq('artist_id', artistId).eq('status', 'approved').order('created_at', { ascending: false }),
+    supabase.from('videos').select('*').eq('artist_id', artistId).eq('status', 'approved').order('created_at', { ascending: false }),
+  ]);
+  if (songs.error) throw songs.error;
+  if (videos.error) throw videos.error;
+  return { songs: (songs.data || []) as Song[], videos: (videos.data || []) as Video[] };
 }
 
 export async function getAllArtists(): Promise<Artist[]> {

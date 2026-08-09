@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Trash2, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { Search, Trash2, CheckCircle2, XCircle, TrendingUp, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { getSongs, getVideos, approveContent, rejectContent, setTrending, deleteSong, deleteVideo, setVideoDownloadsEnabled } from '@/lib/api';
+import { getSongs, getVideos, approveContent, rejectContent, setTrending, deleteSong, deleteVideo, setVideoDownloadsEnabled, updateSong } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import type { Song, Video as VideoType } from '@/types/index';
 
@@ -44,6 +44,18 @@ export default function AdminContentPage() {
       className="text-[10px] capitalize"
     >{status}</Badge>
   );
+
+  const editSong = async (song: Song) => {
+    const title = window.prompt('Song title', song.title);
+    if (title === null || !title.trim()) return;
+    const coverUrl = window.prompt('Public cover image URL (leave unchanged to keep current cover)', song.cover_url || '');
+    if (coverUrl === null) return;
+    try {
+      await updateSong(song.id, { title: title.trim(), cover_url: coverUrl.trim() || undefined });
+      setSongs(previous => previous.map(item => item.id === song.id ? { ...item, title: title.trim(), cover_url: coverUrl.trim() || undefined } : item));
+      toast.success('Song details updated');
+    } catch { toast.error('Could not update the song'); }
+  };
 
   const SongsTable = () => {
     const items = filterItems(songs);
@@ -79,6 +91,9 @@ export default function AdminContentPage() {
                 </td>
                 <td className="py-2.5 px-3 whitespace-nowrap">
                   <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" title="Edit title and cover" onClick={() => editSong(song)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                     {song.status === 'pending' && (
                       <>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-green-600" title="Approve"

@@ -320,14 +320,6 @@ export const lipilaService = {
     return this.createMobileMoneyPayment('video_purchase', videoId, price, `Video: ${title}`, phoneNumber)
   },
 
-  async purchaseMerchandise(orderId: string, total: number, phoneNumber: string): Promise<LipilaPaymentResponse> {
-    return this.createMobileMoneyPayment('merchandise', orderId, total, 'Merchandise Order', phoneNumber)
-  },
-
-  async purchaseTicket(eventId: string, ticketPrice: number, eventTitle: string, phoneNumber: string): Promise<LipilaPaymentResponse> {
-    return this.createMobileMoneyPayment('ticket', eventId, ticketPrice, `Ticket: ${eventTitle}`, phoneNumber)
-  },
-
   async handleWebhook(payload: Record<string, unknown>): Promise<void> {
     const { reference, status } = payload
 
@@ -403,13 +395,6 @@ async function handleSuccessfulPayment(paymentId: string, payment: Payment): Pro
       await createPurchase(userId, 'video', metadata.item_id as string, payment.amount, paymentId)
       break
 
-    case 'ticket':
-      await createTicket(userId, metadata.item_id as string, paymentId, payment.amount)
-      break
-
-    case 'merchandise':
-      await updateOrderStatus(metadata.item_id as string, paymentId)
-      break
   }
 
   await supabase.from('notifications').insert({
@@ -509,88 +494,4 @@ async function createPurchase(
     message: `Your ${itemType} has been unlocked and is now available in your library.`,
     data: { item_type: itemType, item_id: itemId },
   })
-}
-
-async function createTicket(
-  userId: string,
-  eventId: string,
-  paymentId: string,
-  price: number
-): Promise<void> {
-  const { data: event } = await supabase
-    .from('events')
-    .select('title')
-    .eq('id', eventId)
-    .single()
-
-  // Create ticket
-  const { data: ticket, error: ticketError } = await supabase
-    .from('tickets')
-    .insert({
-      event_id: eventId,
-      user_id: userId,
-      status: 'sold',
-      price,
-      currency: 'ZMW',
-      payment_id: paymentId,
-      purchased_at: new Date().toISOString(),
-    })
-    .select()
-    .single()
-
-  if (!ticketError && ticket) {
-    // Generate QR code (simplified - in production, use a proper QR library)
-    const qrData = JSON.stringify({
-      ticket_id: ticket.id,
-      event_id: eventId,
-      ticket_number: ticket.ticket_number,
-    })
-
-    // Update ticket with QR code
-    await supabase
-      .from('tickets')
-      .update({ qr_code: `data:text/plain;base64,${btoa(qrData)}` })
-      .eq('id', ticket.id)
-
-    // Update tickets sold count
-    await supabase.rpc('increment', {
-      table_name: 'events',
-      row_id: eventId,
-      column_name: 'tickets_sold',
-    })
-  }
-
-  await supabase.from('notifications').insert({
-    user_id: userId,
-    type: 'ticket_purchased',
-    title: 'Ticket Purchased',
-    message: `Your ticket for ${event?.title || 'the event'} has been confirmed.`,
-    data: { event_id: eventId, ticket_id: ticket?.id },
-  })
-}
-
-async function updateOrderStatus(orderId: string, paymentId: string): Promise<void> {
-  await supabase
-    .from('orders')
-    .update({
-      status: 'paid',
-      payment_id: paymentId,
-    })
-    .eq('id', orderId)
-
-  // Get order items to update merchandise sold count
-  const { data: orderItems } = await supabase
-    .from('order_items')
-    .select('merchandise_id, quantity')
-    .eq('order_id', orderId)
-
-  if (orderItems) {
-    for (const item of orderItems) {
-      await supabase.rpc('increment', {
-        table_name: 'merchandise',
-        row_id: item.merchandise_id,
-        column_name: 'sold_count',
-      })
-    }
-  }
 }

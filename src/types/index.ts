@@ -5,7 +5,7 @@ export interface Option {
   withCount?: boolean;
 }
 
-export type UserRole = 'user' | 'admin' | 'super_admin';
+export type UserRole = 'user' | 'artist' | 'admin' | 'super_admin';
 export type ContentStatus = 'pending' | 'approved' | 'rejected';
 export type PaymentStatus = 'pending' | 'successful' | 'failed' | 'cancelled' | 'insufficient_funds' | 'invalid_transaction';
 export type PaymentMethod = 'mobile_money' | 'card';
@@ -87,6 +87,7 @@ export interface Artist {
   genre?: string;
   is_featured: boolean;
   play_count: number;
+  download_count?: number;
   created_at: string;
 }
 
@@ -333,4 +334,3 @@ export interface PaymentInitResult {
   message: string;
   failure_reason?: string;
 }
-

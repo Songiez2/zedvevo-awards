@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase, isConfigured, type Profile, type Artist } from '@/lib/supabase'
-import { ADMIN_EMAIL, isAdminEmail } from '@/lib/authHelpers'
+import { isAdminEmail } from '@/lib/authHelpers'
 
 interface AuthState {
   user: Profile | null

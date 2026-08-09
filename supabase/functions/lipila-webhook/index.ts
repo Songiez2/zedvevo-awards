@@ -165,6 +165,38 @@ serve(async (req) => {
       if (newSub) {
         await supabase.from('payments').update({ subscription_id: newSub.id }).eq('id', referenceId);
       }
+
+      // Artist access is granted only after Lipila has confirmed the payment.
+      // Never downgrade admin or super-admin accounts when activating an artist plan.
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, display_name, username')
+        .eq('id', payment.user_id)
+        .maybeSingle();
+      if (profile?.role === 'user') {
+        const { error: roleErr } = await supabase
+          .from('profiles')
+          .update({ role: 'artist', updated_at: new Date().toISOString() })
+          .eq('id', payment.user_id);
+        if (roleErr) console.error('[webhook] artist role update error:', roleErr.message);
+      }
+
+      // The artist row is separate from the profile role. Reuse it when it
+      // already exists so a duplicate Lipila callback cannot duplicate artists.
+      const { data: artist, error: artistLookupError } = await supabase
+        .from('artists')
+        .select('id')
+        .eq('user_id', payment.user_id)
+        .maybeSingle();
+      if (artistLookupError) {
+        console.error('[webhook] artist lookup error:', artistLookupError.message);
+      } else if (!artist) {
+        const { error: artistCreateError } = await supabase.from('artists').insert({
+          user_id: payment.user_id,
+          name: profile?.display_name || profile?.username || 'ZedVevo Artist',
+        });
+        if (artistCreateError) console.error('[webhook] artist create error:', artistCreateError.message);
+      }
     }
   }
 

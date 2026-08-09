@@ -4,8 +4,10 @@ import { TrendingUp, Music2, Video as VideoIcon, Heart, Download, Play, Eye, Loa
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { getWeeklyTrending, computeAndStoreWeeklyTrending, getSongById, getVideoById } from '@/lib/api';
-import type { WeeklyTrending, Video } from '@/types/index';
+import { getWeeklyTrending, computeAndStoreWeeklyTrending, getSongById, getVideoById, getTrendingSongs, getTrendingVideos } from '@/lib/api';
+import type { WeeklyTrending, Video, Song } from '@/types/index';
+import MusicCard from '@/components/music/MusicCard';
+import VideoCard from '@/components/video/VideoCard';
 import { useAuth } from '@/contexts/AuthContext';
 import VideoPlayer from '@/components/video/VideoPlayer';
 import { toast } from 'sonner';
@@ -58,18 +60,24 @@ export default function TrendingPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
-  const { playSong } = usePlayer();
+  const [adminSongs, setAdminSongs] = useState<Song[]>([]);
+  const [adminVideos, setAdminVideos] = useState<Video[]>([]);
+  const { playSong, currentSong } = usePlayer();
 
   const load = async () => {
     setLoading(true);
     try {
-      const [played, downloaded, viewed, liked] = await Promise.all([
+      const [played, downloaded, viewed, liked, markedSongs, markedVideos] = await Promise.all([
         getWeeklyTrending('most_played'),
         getWeeklyTrending('most_downloaded'),
         getWeeklyTrending('most_viewed'),
         getWeeklyTrending('most_liked'),
+        getTrendingSongs(20),
+        getTrendingVideos(20),
       ]);
       setData({ most_played: played, most_downloaded: downloaded, most_viewed: viewed, most_liked: liked });
+      setAdminSongs(markedSongs);
+      setAdminVideos(markedVideos);
     } catch { toast.error('Failed to load trending data'); }
     finally { setLoading(false); }
   };
@@ -126,13 +134,19 @@ export default function TrendingPage() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : isEmpty ? (
+        ) : isEmpty && adminSongs.length === 0 && adminVideos.length === 0 ? (
           <div className="text-center py-20">
             <TrendingUp className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
             <p className="text-muted-foreground font-medium">No trending data yet</p>
             <p className="text-xs text-muted-foreground/60 mt-1">Weekly rankings are calculated automatically</p>
           </div>
         ) : (
+          <>
+          {(adminSongs.length > 0 || adminVideos.length > 0) && <section className="mb-10">
+            <h2 className="text-lg font-semibold mb-3">Admin Trending Picks</h2>
+            {adminSongs.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-5">{adminSongs.map(song => <MusicCard key={song.id} song={song} isPlaying={currentSong?.id === song.id} onPlay={selected => playSong(selected, adminSongs)} />)}</div>}
+            {adminVideos.length > 0 && <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{adminVideos.map(video => <VideoCard key={video.id} video={video} onPlay={setCurrentVideo} />)}</div>}
+          </section>}
           <Tabs defaultValue="most_played">
             <TabsList className="mb-6 flex-wrap h-auto gap-1">
               {CATEGORIES.map(cat => (
@@ -158,6 +172,7 @@ export default function TrendingPage() {
               </TabsContent>
             ))}
           </Tabs>
+          </>
         )}
       </div>
 

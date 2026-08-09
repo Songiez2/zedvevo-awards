@@ -20,15 +20,13 @@ const planIcons = {
 export default function BecomeArtistPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()
   
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<'daily' | 'weekly' | 'annual' | null>(null)
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'success' | 'failed'>('idle')
   const [statusMessage, setStatusMessage] = useState('')
-  const [paymentId, setPaymentId] = useState<string | null>(null)
 
   const handleSelectPlan = (planType: 'daily' | 'weekly' | 'annual') => {
     if (!isAuthenticated) {
@@ -44,7 +42,6 @@ export default function BecomeArtistPage() {
     setPhoneNumber('')
     setPaymentStatus('idle')
     setStatusMessage('')
-    setPaymentId(null)
     setShowPaymentModal(true)
   }
 
@@ -72,7 +69,6 @@ export default function BecomeArtistPage() {
       return
     }
 
-    setIsProcessing(true)
     setPaymentStatus('pending')
     setStatusMessage(`Processing ${network.toUpperCase()} payment...`)
 
@@ -87,11 +83,9 @@ export default function BecomeArtistPage() {
           description: result.error || 'Please check your phone number and try again.',
           variant: 'destructive',
         })
-        setIsProcessing(false)
         return
       }
 
-      setPaymentId(result.paymentId || null)
       
       if (result.status === 'completed') {
         setPaymentStatus('success')
@@ -124,9 +118,7 @@ export default function BecomeArtistPage() {
         description: 'Something went wrong. Please try again.',
         variant: 'destructive',
       })
-    } finally {
-      setIsProcessing(false)
-    }
+    } finally {}
   }
 
   const pollPaymentStatus = async (paymentId: string) => {
@@ -187,7 +179,7 @@ export default function BecomeArtistPage() {
             Become an Artist
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Start uploading your music, selling merchandise, and connecting with fans on ZedVevo
+            Start uploading your music and connecting with fans on ZedVevo
           </p>
         </div>
 
@@ -278,7 +270,6 @@ export default function BecomeArtistPage() {
                   placeholder="260XXXXXXXXX"
                   value={phoneNumber}
                   onChange={handlePhoneChange}
-                  leftIcon={<Phone className="h-4 w-4" />}
                   className="w-full"
                 />
                 {phoneNumber && (
